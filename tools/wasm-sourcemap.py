@@ -138,7 +138,9 @@ def encode_uint_var(n):
 def append_source_mapping(wasm, url):
   logger.debug('Append sourceMappingURL section')
   section_name = "sourceMappingURL"
-  section_content = encode_uint_var(len(section_name)) + section_name + encode_uint_var(len(url)) + url
+  section_name_bytes = section_name.encode('utf-8')
+  url_bytes = url.encode('utf-8')
+  section_content = encode_uint_var(len(section_name_bytes)) + section_name_bytes + encode_uint_var(len(url_bytes)) + url_bytes
   return wasm + encode_uint_var(0) + encode_uint_var(len(section_content)) + section_content
 
 
