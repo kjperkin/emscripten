@@ -56,6 +56,7 @@ class Prefixes:
     self.cache = {}
 
   def resolve(self, name):
+    result = None
     if name in self.cache:
       return self.cache[name]
 
@@ -278,21 +279,33 @@ def build_sourcemap(entries, code_section_offset, prefixes, collect_sources, bas
     file_name = normalize_path(file_name)
     # if prefixes were provided, we use that; otherwise, we emit a relative
     # path
+    source_name = None
     if prefixes.provided():
       source_name = prefixes.sources.resolve(file_name)
-    else:
+      if source_name is None:
+        source_name = prefixes.sources.resolve(os.path.abspath(file_name))
+    if source_name is None:
       try:
-        file_name = os.path.relpath(file_name, base_path)
+        source_name = os.path.relpath(file_name, base_path)
       except ValueError:
-        file_name = os.path.abspath(file_name)
-      file_name = normalize_path(file_name)
-      source_name = file_name
+        source_name = os.path.abspath(file_name)
+    source_name = normalize_path(source_name)
     if source_name not in sources_map:
       source_id = len(sources)
       sources_map[source_name] = source_id
       sources.append(source_name)
       if collect_sources:
-        load_name = prefixes.load.resolve(file_name)
+        load_name = None
+        if prefixes.provided():
+          load_name = prefixes.load.resolve(file_name)
+          if load_name is None:
+            load_name = prefixes.load.resolve(os.path.abspath(file_name))
+        if load_name is None:
+          try:
+            load_name = os.path.relpath(file_name, base_path)
+          except ValueError:
+            load_name = os.path.abspath(file_name)
+        load_name = normalize_path(file_name)
         try:
           with open(load_name, 'r') as infile:
             source_content = infile.read()
